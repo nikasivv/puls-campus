@@ -272,7 +272,9 @@ class CampusWorkflowTests(unittest.TestCase):
         self.assertIn('23 ноября'.encode(),november.data)
         self.assertIn('ЧЁТНАЯ'.encode(),november.data)
         self.assertNotIn('↗ Аудитория'.encode(),november.data)
-        self.assertIn('calendar-lesson'.encode(),november.data)
+        # v6: cards are buttons opening detailed lesson dialogs (old class: calendar-lesson).
+        self.assertIn(b'class="session-card',november.data)
+        self.assertIn(b'data-lesson-dialog=',november.data)
 
     def test_staff_navigation_is_separate_and_protected(self):
         self.login('dean')
