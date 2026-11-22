@@ -1,0 +1,16 @@
+name: Campus checks
+on:
+  push:
+  pull_request:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core
+      - run: python -m pip install -r requirements.txt
+      - run: python -m compileall -q app.py schedule_engine.py import_helpers.py tests
+      - run: python -m unittest discover -s tests -v

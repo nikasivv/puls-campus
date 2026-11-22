@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#172b38"><title>{% block title %}ПУЛЬС{% endblock %} · Campus OS</title>
+  <link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+  <!-- Preserve v3 typography when Manrope is available; never block the site when it isn't. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+
+<script src="{{ url_for('static',filename='app.js') }}" defer></script></head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('admin_dashboard') if me['role']=='admin' else url_for('staff_dashboard') if me['role']=='staff' else url_for('home') }}" aria-label="ПУЛЬС — главная"><span class="brand-mark">✳</span><span>пульс<small>CAMPUS OS / 26</small></span></a>
+    <div class="sidebar-caption">{{ 'УПРАВЛЕНИЕ' if me['role']!='student' else 'МОЁ ПРОСТРАНСТВО' }}</div>
+    <nav aria-label="Основная навигация">
+    {% if me['role']=='admin' %}
+      <a class="nav-link {{ 'selected' if request.args.get('tab','import')=='import' else '' }}" href="{{ url_for('admin_dashboard',tab='import') }}" {{ 'aria-current=page' if request.args.get('tab','import')=='import' else '' }}><span aria-hidden="true">▧</span> Загрузка</a>
+      <a class="nav-link {{ 'selected' if request.args.get('tab','import')=='users' else '' }}" href="{{ url_for('admin_dashboard',tab='users') }}" {{ 'aria-current=page' if request.args.get('tab','import')=='users' else '' }}><span aria-hidden="true">◉</span> Пользователи</a>
+      <a class="nav-link {{ 'selected' if request.args.get('tab','import')=='journal' else '' }}" href="{{ url_for('admin_dashboard',tab='journal') }}" {{ 'aria-current=page' if request.args.get('tab','import')=='journal' else '' }}><span aria-hidden="true">▤</span> Журнал действий</a>
+    {% elif me['role']=='staff' %}
+      <a class="nav-link {{ 'selected' if active_page=='staff_dashboard' else '' }}" href="{{ url_for('staff_dashboard') }}"><span>▤</span> Заявки</a>
+      <a class="nav-link {{ 'selected' if active_page=='staff_schedule' else '' }}" href="{{ url_for('staff_schedule') }}"><span>▦</span> Расписание</a>
+      <a class="nav-link {{ 'selected' if active_page=='staff_academic' else '' }}" href="{{ url_for('staff_academic') }}"><span>◈</span> Успеваемость</a>
+      <a class="nav-link {{ 'selected' if active_page=='staff_announcements' else '' }}" href="{{ url_for('staff_announcements') }}"><span>◎</span> Объявления</a>
+    {% else %}
+      <a class="nav-link {{ 'selected' if active_page=='home' else '' }}" href="{{ url_for('home') }}"><span>◫</span> Обзор</a>
+      <a class="nav-link {{ 'selected' if active_page=='schedule' else '' }}" href="{{ url_for('schedule') }}"><span>▦</span> Расписание</a>
+      <a class="nav-link {{ 'selected' if active_page=='grades' else '' }}" href="{{ url_for('grades') }}"><span>◈</span> Успеваемость</a>
+      <a class="nav-link {{ 'selected' if active_page in ('requests_page','request_detail') else '' }}" href="{{ url_for('requests_page') }}"><span>▤</span> Заявки и справки</a>
+    {% endif %}
+    </nav>
+    <div class="sidebar-bottom"><span class="tiny-dot"></span> Неофициальный конкурсный прототип<br>Все данные вымышлены</div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar">
+      <span class="topbar-tag">{{ 'УЧЕБНЫЙ ОФИС' if me['role']=='staff' else 'УПРАВЛЕНИЕ КАМПУСОМ' if me['role']=='admin' else 'ТВОЙ УНИВЕРСИТЕТ / ТВОЙ РИТМ' }}</span>
+      {% if me['role']=='student' %}<details class="bell-menu"><summary aria-label="Уведомления, непрочитанных {{ unread_count }}" title="Уведомления"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>{% if unread_count %}<span class="bell-count">{{ unread_count if unread_count<100 else '99+' }}</span>{% endif %}</summary><div class="bell-popover"><div class="bell-title"><strong>Уведомления</strong><a href="{{ url_for('notices') }}">Все события</a></div>{% for n in recent_notices %}<div class="bell-notice {{ 'unread' if not n['is_read'] else '' }}"><strong>{{ n['title'] }}</strong><p>{{ n['body'] }}</p><div class="bell-actions">{% if n['request_id'] %}<a href="{{ url_for('request_detail',rid=n['request_id']) }}">К заявке</a>{% elif n['target_date'] %}<a href="{{ url_for('schedule',date=n['target_date']) }}">Открыть дату</a>{% elif n['kind']=='schedule' %}<a href="{{ url_for('schedule') }}">К расписанию</a>{% elif n['kind']=='grades' %}<a href="{{ url_for('grades') }}">К оценкам</a>{% endif %}{% if not n['is_read'] %}<form method="post" action="{{ url_for('mark_read',nid=n['id']) }}"><input type="hidden" name="_csrf" value="{{ session['_csrf'] }}"><button class="text-button" type="submit">Прочитано</button></form>{% endif %}</div></div>{% else %}<p class="form-help">Пока нет событий.</p>{% endfor %}{% if unread_count %}<form class="bell-read-all" method="post" action="{{ url_for('mark_all_read') }}"><input type="hidden" name="_csrf" value="{{ session['_csrf'] }}"><button class="text-button" type="submit">Отметить все прочитанными</button></form>{% endif %}</div></details>{% endif %}
+      <a class="avatar-link" href="{{ url_for('profile') }}" aria-label="Открыть профиль"><span class="avatar">{{ me['full_name'][0] }}</span><span class="avatar-name">{{ me['full_name'].split()[0] }}</span></a>
+    </header>
+    <main class="content" id="main">
+      {% with messages=get_flashed_messages(with_categories=true) %}{% for cat,msg in messages %}<div class="flash {{ cat }}" role="status">{{ msg }}</div>{% endfor %}{% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="footer">ПУЛЬС © 2026 <span>Сделано для людей, а не для отчётов · Конкурсный концепт</span></footer>
+  </div>
+</div>
+{% if me['role']=='student' %}
+<nav class="mobile-nav" aria-label="Мобильная навигация">
+  <a href="{{ url_for('home') }}" {{ 'aria-current=page' if active_page=='home' else '' }}>◫<small>Обзор</small></a>
+  <a href="{{ url_for('schedule') }}">▦<small>Пары</small></a>
+  <a href="{{ url_for('grades') }}">◈<small>Оценки</small></a>
+  <a href="{{ url_for('requests_page') }}">▤<small>Заявки</small></a>
+  <a href="{{ url_for('profile') }}">◉<small>Профиль</small></a>
+</nav>
+{% else %}
+<nav class="mobile-nav mobile-nav-staff" aria-label="Мобильная навигация">
+  {% if me['role']=='staff' %}<a href="{{ url_for('staff_dashboard') }}">▤<small>Заявки</small></a><a href="{{ url_for('staff_schedule') }}">▦<small>Расписание</small></a><a href="{{ url_for('staff_academic') }}">◈<small>Оценки</small></a><a href="{{ url_for('staff_announcements') }}">◎<small>Объявления</small></a>{% else %}<a href="{{ url_for('admin_dashboard',tab='import') }}" {{ 'aria-current=page' if request.args.get('tab','import')=='import' and active_page=='admin_dashboard' else '' }}>▧<small>Загрузка</small></a><a href="{{ url_for('admin_dashboard',tab='users') }}" {{ 'aria-current=page' if request.args.get('tab','import')=='users' and active_page=='admin_dashboard' else '' }}>◉<small>Пользователи</small></a><a href="{{ url_for('admin_dashboard',tab='journal') }}" {{ 'aria-current=page' if request.args.get('tab','import')=='journal' and active_page=='admin_dashboard' else '' }}>▤<small>Журнал</small></a><a href="{{ url_for('profile') }}">◈<small>Профиль</small></a>{% endif %}
+</nav>
+{% endif %}
+</body></html>

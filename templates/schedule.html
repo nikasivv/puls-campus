@@ -1,0 +1,186 @@
+
+{% extends 'base.html' %}
+{% block title %}Расписание по датам{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <span class="eyebrow">МОЁ РАСПИСАНИЕ / КАЛЕНДАРЬ</span>
+  <h1>Неделя в фокусе<span class="accent-dot">.</span></h1>
+  <p>Занятия группы {{ me['group_name'] }}. Выбирай нужную дату и открывай подробности любой пары.</p>
+</div>
+
+<section class="calendar-toolbar panel">
+  <div>
+    <span class="eyebrow">
+      {{ 'ЧЁТНАЯ' if parity=='even' else 'НЕЧЁТНАЯ' }} НЕДЕЛЯ · ISO №{{ week_start.isocalendar().week }}
+    </span>
+    <h2>{{ week_title }}</h2>
+    <p class="form-help">Календарные даты, преподаватели и аудитории. Разовые изменения выделены цветом.</p>
+  </div>
+
+  <div class="calendar-actions">
+    <a class="week-arrow" href="{{ url_for('schedule',date=previous) }}" aria-label="Предыдущая неделя">Предыдущая неделя</a>
+    <a class="btn outline" href="{{ url_for('schedule') }}">Сегодня</a>
+    <a class="week-arrow" href="{{ url_for('schedule',date=upcoming) }}" aria-label="Следующая неделя">Следующая неделя</a>
+    <form class="date-jump" method="get">
+      <input aria-label="Выбрать дату" id="jump-date" name="date" type="date" value="{{ selected.isoformat() }}" required>
+      <button class="btn primary" type="submit">Показать</button>
+    </form>
+  </div>
+</section>
+
+<div class="calendar-key">
+  <span class="key-dot"></span> По расписанию
+  <span class="key-dot revised"></span> Изменение
+  <span class="key-dot cancelled"></span> Отменено
+  <span class="calendar-count">{{ total }} занятий на этой неделе</span>
+</div>
+
+<section class="week-board" aria-label="Расписание на семь дней">
+{% for col in columns %}
+  <div class="week-day {{ 'week-day-today' if col.is_today else '' }}" id="day-{{ col.date.isoformat() }}">
+    <div class="week-day-head">
+      <span class="week-day-name">{{ col.label }}</span>
+      <strong>{{ '%02d'|format(col.date.day) }}</strong>
+      <small>{{ '%02d'|format(col.date.month) }}</small>
+      {% if col.is_today %}
+      <span class="today-chip">Сегодня</span>
+      {% endif %}
+    </div>
+
+    <div class="week-day-lessons">
+    {% for l in col.lessons %}
+      {% set modal_id='lesson-' ~ col.day_index ~ '-' ~ loop.index %}
+
+      <article class="session-card {{ 'is-cancelled' if l.cancelled else 'is-changed' if l.changed else '' }}">
+        <button
+          class="session-card-open"
+          type="button"
+          data-lesson-dialog="{{ modal_id }}"
+          aria-label="Подробнее: {{ l.subject }}, {{ l.slot_number }} пара, {{ col.date.strftime('%d.%m.%Y') }}"
+        >
+          <span class="session-card-top">
+            <span class="session-badges">
+              <span class="session-type"
+                {% if l.lesson_type == 'ПР' %}
+                style="background:#218060;color:#fff"
+                {% endif %}>{{ l.lesson_type }}</span>
+              <span class="session-period">{{ l.slot_number }} пара</span>
+            </span>
+            <time>{{ l.starts }}–{{ l.ends }}</time>
+          </span>
+
+          <strong class="session-subject">{{ l.subject }}</strong>
+
+          <span class="session-card-bottom">
+            <span class="session-location">{{ l.rooms|join(' · ') }}</span>
+            <span class="session-teacher">{{ l.teachers|join(', ') }}</span>
+          </span>
+
+          {% if l.cancelled %}
+            <span class="session-change-note">Пара отменена</span>
+          {% elif l.exception %}
+            <span class="session-change-note">Изменение на эту дату</span>
+          {% elif l.changed %}
+            <span class="session-change-note">Обновлённое занятие</span>
+          {% endif %}
+        </button>
+
+        <dialog id="{{ modal_id }}" class="session-dialog" aria-labelledby="{{ modal_id }}-title">
+          <div class="session-dialog-header">
+            <span class="eyebrow">ПУЛЬС / ПОДРОБНОСТИ ПАРЫ</span>
+            <button type="button" class="dialog-close" data-lesson-dialog-close aria-label="Закрыть подробности">✕</button>
+          </div>
+
+          <div class="session-dialog-content">
+            <div class="session-dialog-meta">
+              <span class="session-type"
+                {% if l.lesson_type == 'ПР' %}
+                style="background:#218060;color:#fff"
+                {% endif %}>{{ l.lesson_type }}</span>
+
+              <span class="session-period">{{ l.slot_number }} пара</span>
+              <span class="session-status {{ 'session-status-cancel' if l.cancelled else '' }}">
+                {{ 'Отменена' if l.cancelled else 'Изменена' if l.changed else 'По расписанию' }}
+              </span>
+            </div>
+
+            <h2 id="{{ modal_id }}-title">{{ l.subject }}</h2>
+
+            <section class="session-facts" aria-label="Информация о занятии">
+              <div class="session-fact">
+                <span>Тип</span>
+                <strong>
+                  {{ l.lesson_type_name }}
+                  <span class="session-type"
+                    {% if l.lesson_type == 'ПР' %}
+                    style="background:#218060;color:#fff"
+                    {% endif %}>{{ l.lesson_type }}</span>
+                </strong>
+              </div>
+
+              <div class="session-fact">
+                <span>Дата и время</span>
+                <strong>{{ col.date.strftime('%d.%m.%Y') }} · {{ l.starts }}–{{ l.ends }}</strong>
+              </div>
+
+              <div class="session-fact">
+                <span>Группы</span>
+                <div class="session-tags">
+                  {% for group in l.groups %}
+                    <span class="session-tag">{{ group }}</span>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="session-fact">
+                <span>Аудитории</span>
+                <div class="session-tags">
+                  {% for room in l.rooms %}
+                    <span class="session-tag room-tag">{{ room }}</span>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="session-fact">
+                <span>Преподаватели</span>
+                <div class="session-tags">
+                  {% for teacher in l.teachers %}
+                    <span class="session-tag teacher-tag">{{ teacher }}</span>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="session-fact">
+                <span>Повторение</span>
+                <strong>
+                  {{ 'Каждую неделю' if l.week_type=='both'
+                  else 'По нечётным неделям' if l.week_type=='odd'
+                  else 'По чётным неделям' if l.week_type=='even'
+                  else 'Только на указанную дату' }}
+                </strong>
+              </div>
+
+              {% if l.reason %}
+                <div class="session-fact changed-reason">
+                  <span>Причина изменения</span>
+                  <strong>{{ l.reason }}</strong>
+                </div>
+              {% endif %}
+            </section>
+
+            <p class="session-dialog-note">
+              Данные относятся к выбранной дате и учебной группе. Изменения публикует деканат.
+            </p>
+          </div>
+        </dialog>
+      </article>
+
+    {% else %}
+      <div class="calendar-empty">Свободно</div>
+    {% endfor %}
+    </div>
+  </div>
+{% endfor %}
+</section>
+{% endblock %}

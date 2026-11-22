@@ -1,0 +1,16 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#172b38"><title>Вход · ПУЛЬС</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+  <!-- Preserve v3 typography when Manrope is available; never block the site when it isn't. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+</head>
+<body class="login-page">
+<div class="login-visual"><div class="login-brand"><span class="brand-mark">✳</span> пульс <small>CAMPUS OS / 26</small></div><div class="login-art"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="art-star">✳</div></div><div class="login-slogan">Университет.<br><em>На твоей волне.</em></div><p>Меньше бюрократии. Больше жизни.</p><span class="concept-note">НЕОФИЦИАЛЬНЫЙ КОНКУРСНЫЙ ПРОТОТИП · ВЫМЫШЛЕННЫЕ ДАННЫЕ</span></div>
+<div class="login-panel"><div class="login-box"><span class="eyebrow">РАДЫ ТЕБЯ ВИДЕТЬ / 01</span><h1>С возвращением<span class="accent-dot">.</span></h1><p class="muted">Четыре роли — одно пространство. Выбери, что хочешь проверить.</p>
+{% with messages=get_flashed_messages(with_categories=true) %}{% for cat,msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}{% endwith %}
+{% if demo_mode %}
+<div class="demo-accounts demo-first"><div class="demo-heading"><span class="eyebrow">БЫСТРЫЙ ВХОД / ДЕМО</span><span class="pill done">1 нажатие</span></div>
+{% for account,label,desc in [ ('student1','Александра','Студент · БИ-24-1'), ('student2','Марк','Студент · МН-23-2'), ('dean','Учебный офис','Сотрудник деканата'), ('admin','Администратор','Управление пользователями') ] %}
+<form method="post" action="{{ url_for('demo_login') }}"><input type="hidden" name="_csrf" value="{{ session['_csrf'] }}"><input type="hidden" name="account" value="{{ account }}"><button type="submit" class="demo-account"><span><strong>{{ label }}</strong><small>{{ desc }}</small></span></button></form>{% endfor %}
+</div>
+{% endif %}
+<details class="manual-login" {{ '' if demo_mode else 'open' }}><summary>Войти по логину и паролю</summary><form method="post"><input type="hidden" name="_csrf" value="{{ session['_csrf'] }}"><label for="username">Логин</label><input id="username" name="username" required autocomplete="username" placeholder="Логин аккаунта"><label for="password">Пароль</label><input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Пароль"><button class="btn primary full" type="submit">Войти</button></form>{% if demo_mode %}<p class="form-help">Для демоаккаунтов пароль: <strong>1234</strong>. Новые аккаунты создаёт администратор.</p>{% endif %}</details>
+</div></div></body></html>

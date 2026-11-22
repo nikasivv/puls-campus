@@ -1,0 +1,20 @@
+{% extends 'base.html' %}{% block title %}Обзор{% endblock %}{% block content %}
+<section class="hero"><div><span class="eyebrow">{{ days[weekday]|upper }} / {{ today.strftime('%d.%m.%Y') }}</span><h1>Привет, {{ me['full_name'].split()[0] }}<span class="accent-dot">.</span></h1><p>Твой день без поиска по чатам и очередей.</p></div><div class="hero-symbol" aria-hidden="true">✳</div></section>
+{% if action %}
+<a class="focus-banner urgent" href="{{ url_for('request_detail',rid=action['id']) }}"><span class="focus-icon">!</span><span><strong>Твой ход: деканат ждёт уточнение</strong><small>Заявка № {{ action['id'] }} · Ответь, чтобы продолжить обработку</small></span></a>
+{% elif ready %}
+<a class="focus-banner" href="{{ url_for('request_detail',rid=ready['id']) }}"><span class="focus-icon">PDF</span><span><strong>Твой документ готов</strong><small>Заявка № {{ ready['id'] }} · Открой и скачай PDF</small></span></a>
+{% else %}
+<a class="focus-banner" href="{{ url_for('requests_page') }}"><span class="focus-icon">✳</span><span><strong>Решай вопросы без визита в деканат</strong><small>Справка, заявление или вопрос — с результатом в кабинете</small></span></a>
+{% endif %}
+<div class="dashboard-grid">
+<a href="{{ url_for('schedule') }}" class="metric lime"><span class="metric-top">01 / СЕГОДНЯ</span><strong>{{ '%02d'|format(lessons|length) }}</strong><span>пар в расписании</span></a>
+<a href="{{ url_for('requests_page') }}" class="metric peach"><span class="metric-top">02 / В РАБОТЕ</span><strong>{{ '%02d'|format(request_count) }}</strong><span>активных обращений</span></a>
+<a href="{{ url_for('grades') }}" class="metric sky"><span class="metric-top">03 / ПРОГРЕСС</span><strong class="metric-word">Мои оценки</strong><span>моя успеваемость</span></a>
+</div>
+<div class="section-grid"><section class="panel"><div class="section-heading"><div><span class="eyebrow">УЧЁБНЫЙ РИТМ</span><h2>Ближайшие занятия</h2></div><a class="text-link" href="{{ url_for('schedule') }}">Расписание</a></div>
+{% if lessons %}{% for l in lessons %}<a class="lesson-row lesson-row-link" href="{{ url_for('schedule',date=today.isoformat()) }}#day-{{ today.isoformat() }}" aria-label="Открыть в расписании: {{ l['subject'] }}"><div class="time">{{ l['starts'] }}<small>{{ l['ends'] }}</small></div><div class="lesson-info"><strong><span class="lesson-type-tag">{{ l.lesson_type }}</span> {{ l['subject'] }}</strong><span>{{ l.teachers|join(', ') }} · {{ l.rooms|join(' / ') }}</span></div>{% if l['changed'] %}<span class="pill warning">Изменение</span>{% endif %}</a>{% endfor %}
+{% elif next_lesson %}<div class="next-class"><span class="eyebrow">СЛЕДУЮЩАЯ ПАРА · {{ days[next_lesson[0].weekday()]|upper }}</span><h3>{{ next_lesson[1]['subject'] }}</h3><p>{{ next_lesson[1]['starts'] }}–{{ next_lesson[1]['ends'] }} · ауд. {{ next_lesson[1]['room'] }}</p><a class="text-link" href="{{ url_for('schedule',date=next_lesson[0].isoformat()) }}">Посмотреть день</a></div>
+{% else %}<div class="empty">Для твоей группы ещё не добавлено расписание. Учебный офис может его создать.</div>{% endif %}
+</section><section class="panel next-panel"><div class="section-heading"><div><span class="eyebrow">СЛЕДУЮЩЕЕ СОБЫТИЕ</span><h2>Что впереди</h2></div></div>{% if next_lesson %}<span class="eyebrow">{{ days[next_lesson[0].weekday()]|upper }} · {{ next_lesson[0].strftime('%d.%m.%Y') }}</span><h3>{{ next_lesson[1]['subject'] }}</h3><p>{{ next_lesson[1]['starts'] }}–{{ next_lesson[1]['ends'] }} · аудитория {{ next_lesson[1]['room'] }}</p><a class="text-link" href="{{ url_for('schedule',date=next_lesson[0].isoformat()) }}">Открыть дату в календаре</a>{% else %}<div class="empty">Пока нет опубликованных занятий в ближайшие две недели.</div>{% endif %}<p class="form-help">Новые объявления и изменения доступны в колокольчике вверху справа.</p></section></div>
+{% endblock %}

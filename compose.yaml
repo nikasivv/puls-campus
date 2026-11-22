@@ -1,0 +1,15 @@
+services:
+  puls:
+    build: .
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      DATABASE_PATH: /data/campus.db
+      DEMO_MODE: "1"
+      HTTPS_ONLY: ${HTTPS_ONLY:-0}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - campus_data:/data
+volumes:
+  campus_data:

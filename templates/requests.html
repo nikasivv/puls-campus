@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% block title %}Заявки и справки{% endblock %}{% block content %}
+<div class="page-heading"><span class="eyebrow">БЕЗ ОЧЕРЕДЕЙ / 04</span><h1>Вопрос и результат<span class="accent-dot">.</span></h1><p>Не просто заявка. Полный маршрут до ответа или готового документа.</p></div>
+<div class="process-strip" aria-label="Как работает сервис"><span>01 · Отправка</span><span>02 · Работа деканата</span><span>03 · Результат</span></div>
+<div class="request-grid">
+<section class="panel"><div class="section-heading"><div><span class="eyebrow">НОВОЕ ОБРАЩЕНИЕ</span><h2>Что нужно решить?</h2></div></div>
+<form method="post" class="request-form"><input type="hidden" name="_csrf" value="{{ session['_csrf'] }}"><label for="type">Тип обращения</label><select id="type" name="type" required><option value="">Выберите услугу</option><option>Справка об обучении</option><option>Справка для военкомата</option><option>Заявление в деканат</option><option>Другой вопрос</option></select>
+<p class="form-help">По справкам деканат сможет выдать демонстрационный PDF. По заявлениям и вопросам — направить решение или файл.</p>
+<label for="comment">Для чего нужна справка или в чём вопрос?</label><textarea id="comment" name="comment" maxlength="1000" rows="5" placeholder="Например: нужна справка для предоставления по месту требования. Для других вопросов опишите ситуацию."></textarea><button class="btn primary" type="submit">Отправить обращение</button></form>
+</section>
+<section class="panel"><div class="section-heading"><div><span class="eyebrow">ВСЁ ПОД КОНТРОЛЕМ</span><h2>Мои обращения</h2></div><span class="pill">{{ requests|length }}</span></div>
+{% for r in requests %}<a class="request-item request-link" href="{{ url_for('request_detail',rid=r['id']) }}"><span class="request-head"><strong>№ {{ '%04d'|format(r['id']) }} · {{ r['type'] }}</strong><span class="pill {{ 'done' if r['status']=='Готова' else 'warning' if r['status']=='Требует уточнения' else '' }}">{{ r['status'] }}</span></span><span class="muted request-summary">{{ r['comment'] or 'Без комментария' }}</span><span class="request-bottom"><small>{{ r['created_at'] }}</small><span>{{ 'Получить PDF' if r['document_id'] and r['status']=='Готова' else 'Открыть маршрут' }}</span></span></a>
+{% else %}<div class="empty">Здесь появится история ваших обращений. Начните с формы слева.</div>{% endfor %}
+</section></div>
+{% endblock %}
